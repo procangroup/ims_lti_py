@@ -1,5 +1,6 @@
 import oauth2
-
+import logging
+logger = logging.getLogger(__name__)
 
 class RequestValidatorMixin(object):
     '''
@@ -35,11 +36,12 @@ class RequestValidatorMixin(object):
                 url,
                 headers=headers,
                 parameters=parameters)
+            #logger.debug('----------------------oauth_request : %s -- self.oauth_consumer : %s' % ( oauth_request, self.oauth_consumer))
 
             self.oauth_server.verify_request(
                 oauth_request, self.oauth_consumer, {})
 
-        except oauth2.MissingSignature, e:
+        except oauth2.MissingSignature as e:
             if handle_error:
                 return False
             else:
@@ -63,6 +65,7 @@ class RequestValidatorMixin(object):
         '''
         Check whether the OAuth-signed request is valid and throw error if not.
         '''
+        logger.debug('----------------------oauth_request')
         self.is_valid_request(request, parameters={}, handle_error=False)
 
 
@@ -93,21 +96,6 @@ class DjangoRequestValidatorMixin(RequestValidatorMixin):
         return (fake_method or request.method,
                 request.build_absolute_uri(),
                 request.META,
-                (dict(request.POST.iteritems())
+                (dict(request.POST.items())
                     if request.method == 'POST'
                     else parameters))
-
-
-class WebObRequestValidatorMixin(RequestValidatorMixin):
-    '''
-    A mixin for OAuth request validation using WebOb
-    '''
-    def parse_request(self, request, parameters=None, fake_method=None):
-        '''
-        Parse WebOb request
-        '''
-        return (request.method,
-                request.url,
-                request.headers,
-                request.POST.mixed())
-

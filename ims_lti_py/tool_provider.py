@@ -1,15 +1,11 @@
-from launch_params import LaunchParamsMixin
-from request_validator import (
-    RequestValidatorMixin,
-    FlaskRequestValidatorMixin,
-    DjangoRequestValidatorMixin,
-    WebObRequestValidatorMixin
-)
-from outcome_request import OutcomeRequest
+from . launch_params import LaunchParamsMixin
+from . request_validator import RequestValidatorMixin, \
+    FlaskRequestValidatorMixin, DjangoRequestValidatorMixin
+from . outcome_request import OutcomeRequest
 from collections import defaultdict
 import re
-from urllib import urlencode
-from urlparse import urlsplit, urlunsplit
+from urllib.parse import urlencode
+from urllib.parse import urlsplit, urlunsplit
 
 try:
     from urlparse import parse_qsl
@@ -106,34 +102,26 @@ class ToolProvider(LaunchParamsMixin, RequestValidatorMixin, object):
         else:
             return default
 
-    def post_replace_result(self, score, outcome_opts=defaultdict(lambda:None), result_data=None):
+    def post_replace_result(self, score):
         '''
         POSTs the given score to the Tool Consumer with a replaceResult.
 
         Returns OutcomeResponse object and stores it in self.outcome_request
-
-        OPTIONAL:
-            result_data must be a dictionary
-            Note: ONLY ONE of these values can be in the dict at a time,
-            due to the Canvas specification.
-
-            'text' : str text
-            'url' : str url
         '''
-        return self.new_request(outcome_opts).post_replace_result(score, result_data)
+        return self.new_request().post_replace_result(score)
 
-    def post_delete_result(self,outcome_opts=defaultdict(lambda:None)):
+    def post_delete_result(self):
         '''
         POSTs a delete request to the Tool Consumer.
         '''
-        return self.new_request(outcome_opts).post_delete_result()
+        return self.new_request().post_delete_result()
 
-    def post_read_result(self,outcome_opts=defaultdict(lambda:None)):
+    def post_read_result(self):
         '''
         POSTs the given score to the Tool Consumer with a replaceResult, the
         returned OutcomeResponse will have the score.
         '''
-        return self.new_request(outcome_opts).post_read_result()
+        return self.new_request().post_read_result()
 
     def last_outcome_request(self):
         '''
@@ -180,14 +168,14 @@ class ToolProvider(LaunchParamsMixin, RequestValidatorMixin, object):
             original.fragment
         ))
 
-    def new_request(self, defaults):
-        opts = dict(defaults)
-        opts.update({
+    def new_request(self):
+        opts = defaultdict(lambda: None)
+        opts = {
             'consumer_key': self.consumer_key,
             'consumer_secret': self.consumer_secret,
             'lis_outcome_service_url': self.lis_outcome_service_url,
             'lis_result_sourcedid': self.lis_result_sourcedid
-        })
+        }
         self.outcome_requests.append(OutcomeRequest(opts=opts))
         self.last_outcome_request = self.outcome_requests[-1]
         return self.last_outcome_request
@@ -221,11 +209,4 @@ class FlaskToolProvider(FlaskRequestValidatorMixin, ToolProvider):
     '''
     OAuth ToolProvider that works with Flask requests
     '''
-    pass
-
-
-class WebObToolProvider(WebObRequestValidatorMixin, ToolProvider):
-    """
-    OAuth Tool Provider that works with WebOb requests.
-    """
     pass
